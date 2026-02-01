@@ -1,0 +1,22 @@
+# --- Core Application ---
+fastapi
+uvicorn
+python-multipart
+jinja2
+python-dotenv
+
+# --- Machine Learning ---
+scikit-learn
+pandas
+numpy
+
+# --- LangChain Stack (Versi Stabil 0.2.x) ---
+langchain==0.2.17
+langchain-community==0.2.19
+langchain-core==0.2.43
+langchain-google-genai==1.0.10
+langchain-huggingface==0.0.3
+langchain-text-splitters==0.2.4
+
+# --- Dependency Tambahan untuk Google GenAI ---
+google-generativeai
