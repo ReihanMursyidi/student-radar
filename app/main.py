@@ -27,7 +27,11 @@ def get_db():
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, db: Session = Depends(get_db)):
     students = db.query(StudentDB).all()
-    return templates.TemplateResponse("dashboard.html", {"request": request, "students": students})
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={"request": request, "students": students}
+    )
 
 @app.post("/add_student", response_class=HTMLResponse)
 async def add_student(
@@ -68,11 +72,14 @@ async def add_student(
     db.commit()
 
     # Redirect to dashboard
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request, 
-        "students": db.query(StudentDB).all(),
-        "message": f"Data {nama} berhasil ditambahkan!"
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="dashboard.html",
+        context={
+            "students": db.query(StudentDB).all(),
+            "message": f"Data {nama} berhasil ditambahkan!"
+        }
+    )
 
 @app.get("/analyze_detail/{student_id}", response_class=HTMLResponse)
 async def analyze_detail(student_id: int, db: Session = Depends(get_db)):
