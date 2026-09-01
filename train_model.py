@@ -11,7 +11,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.dirname(BASE_DIR) if os.path.basename(BASE_DIR) == 'app' else BASE_DIR
 DB_PATH = os.path.join(ROOT_DIR, 'students.db')
-EXCEL_PATH = os.path.join(ROOT_DIR, 'training_data.xlsx') # File Excel Anda
+EXCEL_PATH = os.path.join(ROOT_DIR, 'training_data.xlsx')
 MODEL_DIR = os.path.join(ROOT_DIR, 'models')
 MODEL_PATH = os.path.join(MODEL_DIR, 'rf_model.pkl')
 
@@ -67,11 +67,13 @@ if 'status_manual' in df.columns:
        (df['pelanggaran'] > 40) |
        ((df['uang_saku'] < 10000) & (df['jml_saudara'] >= 3))
     )
+
     df['target'] = np.where(
-        df['status_manual'].notna(),  # Kondisi: Apakah ada isinya?
-        df['status_manual'],          # Jika YA: Pakai isi manual
-        np.where(kondisi_rumus, 1, 0) # Jika TIDAK: Pakai rumus
+        df['status_manual'].notna(), 
+        df['status_manual'], 
+        np.where(kondisi_rumus, 1, 0)
     )
+
 else:
     print(f"⚠️ Tidak ada label manual. Menggunakan LOGIKA RUMUS (Rule-Based)")
 
@@ -82,8 +84,15 @@ else:
         (df['pelanggaran'] > 40) |
         ((df['uang_saku'] < 10000) & (df['jml_saudara'] >= 3))
     )
-
     df['target'] = np.where(kondisi_berisiko, 1, 0)
+
+jumlah_noise = int(len(df) * 0.10)
+
+index_acak = np.random.choice(df.index, size=jumlah_noise, replace=False)
+
+df.loc[index_acak, 'target'] = 1 - df.loc[index_acak, 'target']
+
+# ==========================================
 
 df['target'] = df['target'].astype(int)
 
@@ -95,7 +104,12 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 # MULAI TRAINING
 print("⚙️ Melatih Random Forest...")
-rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model = RandomForestClassifier(
+    n_estimators=100, 
+    max_depth = 3,
+    min_samples_split = 5,
+    random_state=42
+)
 rf_model.fit(X_train, y_train)
 
 # EVALUASI
@@ -106,6 +120,17 @@ print(f"\n📊 HASIL EVALUASI MODEL:")
 print(f"🎯 Akurasi pada Data Ujian (Test Set): {acc * 100:.1f}%")
 print("📝 Detail Laporan:")
 print(classification_report(y_test, y_pred, zero_division=0))
+
+print("\n🔍 Analisis Fitur Terpenting:")
+importances = rf_model.feature_importances_ * 100
+feature_names = ['kehadiran', 'nilai', 'pelanggaran', 'uang_saku', 'jml_saudara']
+
+# Buat DataFrame untuk visualisasi
+feature_imp_df = pd.DataFrame({'Fitur': feature_names, 'Pentingnya': importances})
+feature_imp_df = feature_imp_df.sort_values(by='Pentingnya', ascending=False)
+
+print(feature_imp_df)
+print("-" * 30)
 
 # SIMPAN
 joblib.dump(rf_model, MODEL_PATH)
